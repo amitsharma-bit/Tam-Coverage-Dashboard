@@ -1,22 +1,19 @@
 import json
-import re
-from collections import Counter
 
-from geocode import parse_svg_polygons, point_in_any_polygon, STATE_NAME_TO_USPS
+from geocode import STATE_NAME_TO_USPS, load_state_rings, point_in_any_ring
 
-with open("../dist/data.js", encoding="utf-8") as f:
+with open("../public/data.js", encoding="utf-8") as f:
     text = f.read()
 assert text.startswith("window.DATA = ")
 data = json.loads(text[len("window.DATA = "):-2])
 
 F = dict(COMPANY=0, GROUP=1, OWNER=2, TEAM_IDX=3, STAGE_IDX=4, CITY=5, DMS=6,
-         USED_CARS=7, NEW_CARS=8, OEM=9, X=10, Y=11, RANK=12, ARR_SALES=13,
+         USED_CARS=7, NEW_CARS=8, OEM=9, LAT=10, LNG=11, RANK=12, ARR_SALES=13,
          CONTRACTED_ARR=14, CRM_PLATFORM=15, CRM_SCHEDULER=16, CONTACTS=17,
          DOMAIN=18, LAST_ACTIVITY=19)
 
 accounts = data["accounts"]
 states = data["states"]
-stategeo = data["stateGeo"]
 
 # 1. row-count reconciliation
 total_rooftops = sum(len(v) for v in accounts.values())
@@ -50,28 +47,26 @@ for name, exp_state, exp_city in checks:
     ok_city = row[F["CITY"]] == exp_city
     print(f"{name}: state={state} (expected {exp_state}, {'OK' if ok_state else 'MISMATCH'}), "
           f"city={row[F['CITY']]} (expected {exp_city}, {'OK' if ok_city else 'MISMATCH'}), "
-          f"x={row[F['X']]}, y={row[F['Y']]}")
+          f"lat={row[F['LAT']]}, lng={row[F['LNG']]}")
     assert ok_state
-    geo = stategeo[state]
-    assert 0 <= row[F["X"]] <= geo["w"], "x out of bounds"
-    assert 0 <= row[F["Y"]] <= geo["h"], "y out of bounds"
 
 # 3. containment check across ALL states: what fraction of dots actually fall inside
-#    the state's own outline polygon (not just inside the bbox)?
+#    the state's real geographic boundary (not just a bounding box)?
+rings_by_state = load_state_rings("cache/us-states.json")
 print("\ncontainment check per state (sample up to 300 rows/state):")
 worst = []
 for state in STATE_NAME_TO_USPS:
     rows = accounts.get(state, [])
     if not rows:
         continue
-    polys = parse_svg_polygons(stategeo[state]["outline"])
+    rings = rings_by_state.get(state, [])
     sample = rows[:300]
     inside = 0
     for row in sample:
-        x, y = row[F["X"]], row[F["Y"]]
-        if x is None or y is None:
+        lat, lng = row[F["LAT"]], row[F["LNG"]]
+        if lat is None or lng is None:
             continue
-        if point_in_any_polygon(x, y, polys):
+        if point_in_any_ring(lng, lat, rings):
             inside += 1
     pct = 100 * inside / len(sample) if sample else 0
     worst.append((state, pct, len(sample)))

@@ -102,13 +102,13 @@ def main():
         "stages": ["Live", "Onboarding"],
     }
 
-    with open("../dist/cslive-data.js", "w", encoding="utf-8") as f:
+    with open("../public/cslive-data.js", "w", encoding="utf-8") as f:
         f.write("window.DATA_CSLIVE = ")
         json.dump(final, f, separators=(",", ":"))
         f.write(";\n")
 
-    size_kb = os.path.getsize("../dist/cslive-data.js") / 1024
-    print(f"wrote ../dist/cslive-data.js ({size_kb:.1f} KB)")
+    size_kb = os.path.getsize("../public/cslive-data.js") / 1024
+    print(f"wrote ../public/cslive-data.js ({size_kb:.1f} KB)")
 
 
 if __name__ == "__main__":

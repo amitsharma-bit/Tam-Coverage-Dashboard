@@ -4,7 +4,7 @@
     {
       "name": "tam-dashboard",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "tam-v2/dist"],
+      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "public"],
       "port": 8123
     }
   ]
