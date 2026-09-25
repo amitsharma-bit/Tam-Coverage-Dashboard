@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spyne TAM Coverage — USA Coverage Map</title>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="wrap" id="tam-wrap">
+  <header class="top">
+    <div>
+      <div class="kicker">Spyne Coverage Map</div>
+      <h1>USA Coverage — Companies &amp; Rooftops</h1>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="num" id="kpi-companies"></div><div class="lbl">Companies</div></div>
+      <div class="kpi"><div class="num" id="kpi-rooftops"></div><div class="lbl">Rooftops</div></div>
+      <div class="kpi"><div class="num" id="kpi-states"></div><div class="lbl">States</div></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="ctl-group">
+      <span class="ctl-label">HubSpot Team</span>
+      <select id="team-select"></select>
+    </div>
+    <div class="ctl-group">
+      <span class="ctl-label">Lifecycle Stage</span>
+      <div class="stage-chips" id="stage-chips"></div>
+    </div>
+    <button type="button" class="cs-nav-btn" id="cs-open-btn">CS Live &rarr;</button>
+  </div>
+
+  <div class="layout">
+    <div class="map-col">
+      <div class="map-card">
+        <div class="map-topbar">
+          <p class="map-hint" id="map-hint"></p>
+          <div class="map-toggles">
+            <div class="map-mode" id="level-toggle">
+              <button type="button" data-level="co" class="active">Companies</button>
+              <button type="button" data-level="rf">Rooftops</button>
+            </div>
+            <div class="map-mode" id="map-mode" hidden>
+              <button type="button" data-mode="pen" class="active">Penetration</button>
+              <button type="button" data-mode="opp">Opportunity</button>
+            </div>
+          </div>
+        </div>
+        <div id="usmap" role="img" aria-label="Satellite choropleth map of US states"></div>
+        <div class="legend">
+          <span class="cap" id="legend-min"></span>
+          <div class="ramp" id="legend-ramp"></div>
+          <span class="cap" id="legend-max"></span>
+          <span style="margin-left:auto" id="legend-metric"></span>
+        </div>
+        <div class="chips-row">
+          <button class="xchip" id="ontario-chip" type="button"><span class="dot"></span> <span id="ontario-label">Ontario, Canada</span></button>
+          <button class="xchip" id="nostate-chip" type="button"><span class="dot" style="background:#9AA5A1"></span> <span id="nostate-label">No state assigned</span></button>
+          <button class="xchip" id="rank-chip" type="button"><span class="dot" style="background:#C25814"></span> <span>Top 150 only</span></button>
+        </div>
+      </div>
+
+      <section class="statemap-card" id="statemap-card" hidden>
+        <div class="sm-head">
+          <div><h3 id="sm-title"></h3><div class="sm-sub" id="sm-sub"></div></div>
+          <div class="sm-tools">
+            <span class="sm-lbl">City labels</span>
+            <div class="map-mode" id="sm-labseg"><button type="button" data-lab="major" class="active">Major</button><button type="button" data-lab="all">All</button><button type="button" data-lab="off">Off</button></div>
+          </div>
+        </div>
+        <div class="sm-mapbox">
+          <div id="statemap" role="img" aria-label="Satellite state rooftop map"></div>
+          <div class="sm-zoom">
+            <button type="button" id="sm-zin" title="Zoom in">+</button>
+            <button type="button" id="sm-zout" title="Zoom out">&minus;</button>
+            <button type="button" id="sm-zreset" title="Reset view">&#10226;</button>
+          </div>
+          <div class="sm-hint2">Scroll to zoom · drag to pan</div>
+        </div>
+        <div class="sm-legend" id="sm-legend"></div>
+      </section>
+    </div>
+    <aside class="panel-wrap">
+      <div class="scope-toggle" id="scope-toggle" role="tablist" aria-label="Penetration baseline">
+        <button type="button" data-scope="spyne" role="tab">Spyne<span>assigned</span></button>
+        <button type="button" data-scope="tam" class="active" role="tab">TAM<span>whole market</span></button>
+      </div>
+      <div class="panel" id="panel"></div>
+    </aside>
+  </div>
+
+  <section class="accounts-card" id="accounts-card" hidden>
+    <div class="accounts-head">
+      <h3 id="accounts-title"></h3>
+      <span class="count" id="accounts-count"></span>
+      <div class="cols-menu-wrap">
+        <button type="button" class="cols-btn" id="accounts-cols-btn">Columns &#9662;</button>
+        <div class="cols-menu" id="accounts-cols-menu" hidden></div>
+      </div>
+      <input class="accounts-search" id="accounts-search" type="search" placeholder="Search company, group, owner, city or OEM&hellip;" aria-label="Search accounts">
+    </div>
+    <div class="accounts-scroll">
+      <table class="accounts">
+        <thead><tr id="accounts-thead-row"></tr></thead>
+        <tbody id="accounts-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="note">Source: HubSpot TAM export (<em>usa-tam-relevant.csv</em>). <strong>Companies</strong> = distinct Org&nbsp;IDs; <strong>Rooftops</strong> = distinct Company&nbsp;IDs, each mapped to the state on its row (deduplicated to one row per rooftop). Lifecycle stage comes from <em>Lifecycle Stage (GD Level)</em>, the only stage field in this data pull &mdash; Companies and Rooftops are two ways of counting the same set of rooftops (by parent org vs. by individual dealership record), not two different stage sources. Map shading = companies by stage. Filters (HubSpot Team &amp; Lifecycle Stage) drive the map, panel and account list.</footer>
+</div>
+
+<div class="wrap" id="cslive-wrap" hidden>
+  <header class="top">
+    <div>
+      <div class="kicker">Spyne &middot; TAM Coverage</div>
+      <h1>USA Rooftop Coverage</h1>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="num" id="cs-kpi-companies"></div><div class="lbl">Companies</div></div>
+      <div class="kpi"><div class="num" id="cs-kpi-rooftops"></div><div class="lbl">Rooftops</div></div>
+      <div class="kpi"><div class="num" id="cs-kpi-states"></div><div class="lbl">States</div></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="ctl-group">
+      <span class="ctl-label">Product</span>
+      <div class="stage-chips" id="cs-product-chips"></div>
+    </div>
+    <div class="ctl-group">
+      <span class="ctl-label">Stage</span>
+      <div class="stage-chips" id="cs-stage-chips"></div>
+    </div>
+    <button type="button" class="cs-nav-btn" id="cs-close-btn">&larr; TAM Map</button>
+  </div>
+
+  <div class="cs-layout">
+    <div class="map-card">
+      <p class="map-hint">Colour = rooftop count for the active filters. Click a state to highlight it and filter the table below. Scroll or use the +/&minus; control to zoom, drag to pan.</p>
+      <div id="cs-usmap" role="img" aria-label="Satellite map of US rooftop coverage"></div>
+      <div class="legend">
+        <span class="cap">Fewer</span>
+        <div class="ramp" id="cs-legend-ramp"></div>
+        <span class="cap">More rooftops</span>
+      </div>
+    </div>
+    <aside class="panel-wrap">
+      <div class="panel" id="cs-panel"></div>
+    </aside>
+  </div>
+
+  <section class="accounts-card" id="cs-accounts-card">
+    <div class="accounts-head">
+      <h3 id="cs-accounts-title"></h3>
+      <span class="count" id="cs-accounts-count"></span>
+      <div class="cols-menu-wrap">
+        <button type="button" class="cols-btn" id="cs-accounts-cols-btn">Columns &#9662;</button>
+        <div class="cols-menu" id="cs-accounts-cols-menu" hidden></div>
+      </div>
+      <input class="accounts-search" id="cs-accounts-search" type="search" placeholder="Search rooftop, group or city&hellip;" aria-label="Search accounts">
+    </div>
+    <div class="accounts-scroll">
+      <table class="accounts">
+        <thead><tr id="cs-accounts-thead-row"></tr></thead>
+        <tbody id="cs-accounts-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="note">Source: live Spyne accounts sheet. <strong>Companies</strong> = distinct enterprise accounts, <strong>Rooftops</strong> = distinct rooftop rows (a rooftop live on two products counts twice). State is derived from each rooftop's coordinates, not the free-text state field, so it renders reliably even where that field was typed inconsistently. Rooftops outside the 50 states + DC (mostly international) are excluded from the map and state table but counted above.</footer>
+</div>
+
+<div id="tooltip"></div>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="data.js"></script>
+<script src="cslive-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
