@@ -1,0 +1,18 @@
+version: 0.2
+# TYPE A (static site, no server). The reference code-build.yaml provided for this migration
+# was container/ECR-based and doesn't apply here — there is no Docker image to build for a
+# static site. This is adapted to the same pre_build/build/post_build shape for a static
+# artifact instead. Confirm $S3_BUCKET_NAME with DevOps/Shield before wiring this into the
+# pipeline — it's inferred, not one of the names given in the migration instructions.
+artifacts:
+  base-directory: dist
+  files:
+    - '**/*'
+phases:
+  build:
+    commands:
+      - test -f dist/index.html
+      - test -f dist/404.html
+  post_build:
+    commands:
+      - echo Build artifact is the dist/ directory, ready for code-deploy.yaml to sync to S3.

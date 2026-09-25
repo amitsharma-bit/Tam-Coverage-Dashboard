@@ -2,7 +2,7 @@ import json
 
 from geocode import STATE_NAME_TO_USPS, load_state_rings, point_in_any_ring
 
-with open("../public/data.js", encoding="utf-8") as f:
+with open("../dist/data.js", encoding="utf-8") as f:
     text = f.read()
 assert text.startswith("window.DATA = ")
 data = json.loads(text[len("window.DATA = "):-2])

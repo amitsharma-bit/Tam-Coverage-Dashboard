@@ -1,0 +1,14 @@
+version: 0.2
+# TYPE A (static site, no server). Same caveat as code-build.yaml: the reference deploy file
+# provided assumed a container deploy (imagedefinitions.json for ECS). This syncs the built
+# dist/ artifact to S3 and invalidates CloudFront instead. $S3_BUCKET_NAME and
+# $CLOUDFRONT_DISTRIBUTION_ID are placeholders — confirm the real names/values with
+# DevOps/Shield when they provision this app's AWS resources.
+phases:
+  post_build:
+    commands:
+      - test -f dist/index.html
+      - aws s3 sync dist/ s3://$S3_BUCKET_NAME/ --delete
+      - aws s3 cp s3://$S3_BUCKET_NAME/health s3://$S3_BUCKET_NAME/health --content-type application/json --metadata-directive REPLACE
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+      - echo Static deploy completed

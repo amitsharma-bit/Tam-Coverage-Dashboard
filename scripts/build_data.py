@@ -285,14 +285,14 @@ def main():
         "cellKeys": cell_keys,
     }
 
-    with open("../public/data.js", "w", encoding="utf-8") as f:
+    with open("../dist/data.js", "w", encoding="utf-8") as f:
         f.write("window.DATA = ")
         json.dump(final, f, separators=(",", ":"))
         f.write(";\n")
 
     import os
-    size_mb = os.path.getsize("../public/data.js") / (1024 * 1024)
-    print(f"wrote ../public/data.js ({size_mb:.2f} MB)")
+    size_mb = os.path.getsize("../dist/data.js") / (1024 * 1024)
+    print(f"wrote ../dist/data.js ({size_mb:.2f} MB)")
 
     total_rooftops = sum(len(v) for v in accounts_out.values())
     total_orgs = len(set(r["org_id"] for r in canonical))
